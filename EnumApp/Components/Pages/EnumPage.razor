@@ -1,0 +1,53 @@
+@page "/enums"
+@rendermode @(new InteractiveServerRenderMode(prerender: false))
+
+@inject IHttpClientFactory _hc
+
+<div>
+    <SfGrid @ref="sfGridRef" TValue="Notification" AllowPaging="true" AllowFiltering="true">
+        <SfDataManager Url=@($"api/notifications/odata") Adaptor="Syncfusion.Blazor.Adaptors.WebApiAdaptor"
+            HttpClientInstance=@(_hc.CreateClient("App")) />
+        <GridFilterSettings Type="Syncfusion.Blazor.Grids.FilterType.Menu" />
+        <GridPageSettings PageSize="20" PageCount="5" PageSizes="true" />
+        <GridEvents FilterDialogOpening="FilterDialogOpeningHandler" TValue="Notification" />
+        <GridColumns>
+            <GridColumn Field=@nameof(Notification.Id) HeaderText="Id" IsIdentity="true" IsPrimaryKey="true"
+                Visible="false" />
+            <GridColumn Field=@nameof(Notification.Level) HeaderText="Level" AllowEditing="false">
+                <FilterTemplate>
+                    @{
+                        var data = context as PredicateModel<NotificationType>;
+                        if (data is not null)
+                        {
+                            <SfDropDownList Placeholder="Level" DataSource="LevelDropDownSource" TValue="NotificationType"
+                                TItem="string" @bind-Value="@data.Value">
+                                <DropDownListFieldSettings Text="Level" Value="Level" />
+                            </SfDropDownList>
+                        }
+                    }
+                </FilterTemplate>
+            </GridColumn>
+        </GridColumns>
+    </SfGrid>
+</div>
+
+@code {
+    // syncfuscion
+    private SfGrid<Notification>? sfGridRef;
+
+    private List<string> LevelDropDownSource = Enum.GetNames(typeof(NotificationType)).ToList();
+
+    private void FilterDialogOpeningHandler(FilterDialogOpeningEventArgs args)
+    {
+        if (args.ColumnName == nameof(Notification.Level))
+        {
+            args.FilterOperators = [new Operators() { Value = "equal", Text = "Equal" }];
+        }
+    }
+
+    private sealed class Operators : IFilterOperator
+    {
+        public required string Value { get; set; }
+        public required string Text { get; set; }
+    }
+}
